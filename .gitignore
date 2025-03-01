@@ -1,0 +1,18 @@
+# Byte-compiled files
+*.py[cod]
+__pycache__/
+
+# Virtual environments
+venv/
+env/
+
+# FastAPI/Docker logs and caches
+*.log
+*.sqlite3
+
+# Docker files
+docker-compose.override.yml
+
+# OS files
+.DS_Store
+Thumbs.db
