@@ -3,6 +3,8 @@ from external_api import fetch_external_data
 from sqlalchemy.orm import Session
 from config import SessionLocal
 from finance.aggregation import aggregate_financials
+from fastapi.responses import Response
+from finance.pdf_report import generate_financial_pdf
 
 app = FastAPI()
 
@@ -13,6 +15,23 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/financials/report/pdf", tags=["Reports"])
+async def financial_report_pdf(db: Session = Depends(get_db)):
+    """
+    Generate and return a PDF financial report.
+    """
+    records_query = db.query(FinancialRecord).all()
+    records = [
+        {
+            "record_date": str(record.record_date),
+            "revenue": record.revenue,
+            "expense": record.expense,
+            "profit": record.profit,
+        }
+        for record in records_query
+    ]
+    pdf_data = generate_financial_pdf(records)
+    return Response(content=pdf_data, media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=financial_report.pdf"})
 
 @app.get("/external-data")
 async def get_external_data(url: str):
