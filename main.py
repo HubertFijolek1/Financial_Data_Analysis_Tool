@@ -3,8 +3,10 @@ from external_api import fetch_external_data
 from sqlalchemy.orm import Session
 from config import SessionLocal
 from finance.aggregation import aggregate_financials
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from finance.pdf_report import generate_financial_pdf
+from finance.chart import generate_financial_chart
+import io
 
 app = FastAPI()
 
@@ -32,6 +34,22 @@ async def financial_report_pdf(db: Session = Depends(get_db)):
     ]
     pdf_data = generate_financial_pdf(records)
     return Response(content=pdf_data, media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=financial_report.pdf"})
+
+@app.get("/financials/chart", tags=["Reports"])
+async def financial_chart(db: Session = Depends(get_db)):
+    """
+    Generate a dynamic chart (PNG image) for financial revenue trends.
+    """
+    records_query = db.query(FinancialRecord).all()
+    records = [
+        {
+            "record_date": str(record.record_date),
+            "revenue": record.revenue,
+        }
+        for record in records_query
+    ]
+    chart_image = generate_financial_chart(records)
+    return StreamingResponse(io.BytesIO(chart_image), media_type="image/png")
 
 @app.get("/external-data")
 async def get_external_data(url: str):
